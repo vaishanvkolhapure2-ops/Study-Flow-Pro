@@ -1,0 +1,6 @@
+{
+  "name": "StudyFlow Neural Pro",
+  "description": "A premium multi-modal AI study platform featuring active recall flashcards, voice lessons, concept visualization, curriculum-grounded tutoring, and automated study planning.",
+  "requestFramePermissions": ["microphone"],
+  "majorCapabilities": []
+}

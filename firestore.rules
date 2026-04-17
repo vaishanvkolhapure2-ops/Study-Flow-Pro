@@ -1,0 +1,183 @@
+rules_version = '2';
+service cloud.firestore {
+  match /databases/{database}/documents {
+
+    // ===============================================================
+    // Assumed Data Model
+    // ===============================================================
+    //
+    // Collection: users
+    // Document ID: userId (auth.uid)
+    // Fields:
+    //   - uid: string (required, immutable)
+    //   - email: string (required)
+    //   - displayName: string (optional)
+    //   - photoURL: string (optional)
+    //   - role: string (required, 'student' or 'admin')
+    //   - createdAt: timestamp (required, immutable)
+    //
+    // Collection: tasks
+    // Document ID: taskId
+    // Fields:
+    //   - uid: string (required, author ID)
+    //   - text: string (required, max 500 chars)
+    //   - completed: bool (required)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: studyPlans
+    // Document ID: planId
+    // Fields:
+    //   - uid: string (required, author ID)
+    //   - subjects: string (required)
+    //   - days: number (required, positive)
+    //   - plan: string (required)
+    //   - fullPlan: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: chatMessages
+    // Document ID: messageId
+    // Fields:
+    //   - uid: string (required, author ID)
+    //   - role: string (required, 'user' or 'ai')
+    //   - content: string (required, max 5000 chars)
+    //   - createdAt: timestamp (required)
+    //
+    // Collection: educationalVideos
+    // Document ID: videoId
+    // Fields:
+    //   - uid: string (required, author ID)
+    //   - title: string (required)
+    //   - prompt: string (required)
+    //   - videoUri: string (required)
+    //   - summary: string (optional)
+    //   - createdAt: timestamp (required)
+    //
+    // ===============================================================
+
+    // ===============================================================
+    // Helper Functions
+    // ===============================================================
+
+    function isAuthenticated() {
+      return request.auth != null;
+    }
+
+    function isOwner(userId) {
+      return isAuthenticated() && request.auth.uid == userId;
+    }
+
+    function isDocOwner() {
+      return isAuthenticated() && request.auth.uid == resource.data.uid;
+    }
+
+    function isPostOwner() {
+      return isAuthenticated() && request.auth.uid == request.resource.data.uid;
+    }
+
+    function isValidEmail(email) {
+      return email is string && email.matches("^[a-zA-Z0-9._%+-]+@[a-zA-Z0-9.-]+\\.[a-zA-Z]{2,}$");
+    }
+
+    function isValidTimestamp(ts) {
+      return ts is timestamp;
+    }
+
+    function isRecent(ts) {
+      return ts > request.time - duration.value(5, 'm') && ts <= request.time;
+    }
+
+    // ===============================================================
+    // Domain Validators
+    // ===============================================================
+
+    function isValidUser(data) {
+      return data.uid is string &&
+             data.uid == request.auth.uid &&
+             isValidEmail(data.email) &&
+             data.role in ['student', 'admin'] &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidTask(data) {
+      return data.uid is string &&
+             data.uid == request.auth.uid &&
+             data.text is string &&
+             data.text.size() > 0 &&
+             data.text.size() < 500 &&
+             data.completed is bool &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidStudyPlan(data) {
+      return data.uid is string &&
+             data.uid == request.auth.uid &&
+             data.subjects is string &&
+             data.days is number && data.days > 0 &&
+             data.plan is string &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidChatMessage(data) {
+      return data.uid is string &&
+             data.uid == request.auth.uid &&
+             data.role in ['user', 'ai'] &&
+             data.content is string &&
+             data.content.size() > 0 &&
+             data.content.size() < 5000 &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    function isValidEducationalVideo(data) {
+      return data.uid is string &&
+             data.uid == request.auth.uid &&
+             data.title is string && data.title.size() < 200 &&
+             data.prompt is string && data.prompt.size() < 2000 &&
+             data.videoUri is string &&
+             (!('summary' in data) || (data.summary is string && data.summary.size() < 5000)) &&
+             isValidTimestamp(data.createdAt);
+    }
+
+    // ===============================================================
+    // Rules
+    // ===============================================================
+
+    match /users/{userId} {
+      allow read: if isOwner(userId);
+      allow create: if isOwner(userId) && isValidUser(request.resource.data);
+      allow update: if isOwner(userId) && isValidUser(request.resource.data) &&
+                      request.resource.data.createdAt == resource.data.createdAt &&
+                      request.resource.data.uid == resource.data.uid;
+    }
+
+    match /tasks/{taskId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidTask(request.resource.data);
+      allow update: if isDocOwner() && isValidTask(request.resource.data) && 
+                      request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+
+    match /studyPlans/{planId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidStudyPlan(request.resource.data);
+      allow update: if isDocOwner() && isValidStudyPlan(request.resource.data) &&
+                      request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+
+    match /chatMessages/{messageId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidChatMessage(request.resource.data);
+      allow update: if false; // Messages are immutable
+      allow delete: if isDocOwner();
+    }
+
+    match /educationalVideos/{videoId} {
+      allow read: if isAuthenticated() && (resource == null || resource.data.uid == request.auth.uid);
+      allow create: if isAuthenticated() && isValidEducationalVideo(request.resource.data);
+      allow update: if isDocOwner() && isValidEducationalVideo(request.resource.data) &&
+                      request.resource.data.createdAt == resource.data.createdAt;
+      allow delete: if isDocOwner();
+    }
+  }
+}

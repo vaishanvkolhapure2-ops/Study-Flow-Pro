@@ -1,0 +1,92 @@
+{
+  "entities": {
+    "User": {
+      "title": "User",
+      "description": "User profile information",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "Unique identifier for the user" },
+        "email": { "type": "string", "format": "email", "description": "User email address" },
+        "displayName": { "type": "string", "description": "User display name" },
+        "photoURL": { "type": "string", "description": "User profile photo URL" },
+        "role": { "type": "string", "enum": ["student", "admin"], "description": "User role" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Account creation timestamp" }
+      },
+      "required": ["uid", "email", "role", "createdAt"]
+    },
+    "Task": {
+      "title": "Task",
+      "description": "A study task in the user's todo list",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "UID of the task owner" },
+        "text": { "type": "string", "description": "The task content" },
+        "completed": { "type": "boolean", "description": "Whether the task is done" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the task was created" }
+      },
+      "required": ["uid", "text", "completed", "createdAt"]
+    },
+    "StudyPlan": {
+      "title": "StudyPlan",
+      "description": "An AI-generated study plan",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "UID of the owner" },
+        "subjects": { "type": "string", "description": "Comma-separated list of subjects" },
+        "days": { "type": "integer", "description": "Number of days until exams" },
+        "plan": { "type": "string", "description": "The generated plan summary" },
+        "fullPlan": { "type": "string", "description": "JSON stringified full plan details" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the plan was generated" }
+      },
+      "required": ["uid", "subjects", "days", "plan", "createdAt"]
+    },
+    "ChatMessage": {
+      "title": "ChatMessage",
+      "description": "A message in the AI chat tutor",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "UID of the user" },
+        "role": { "type": "string", "enum": ["user", "ai"], "description": "The speaker" },
+        "content": { "type": "string", "description": "The message content" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "Timestamp" }
+      },
+      "required": ["uid", "role", "content", "createdAt"]
+    },
+    "EducationalVideo": {
+      "title": "EducationalVideo",
+      "description": "An AI-generated educational video asset",
+      "type": "object",
+      "properties": {
+        "uid": { "type": "string", "description": "UID of the owner" },
+        "title": { "type": "string", "description": "Subject title" },
+        "prompt": { "type": "string", "description": "Original synthesis prompt" },
+        "videoUri": { "type": "string", "description": "The Veo source URI" },
+        "summary": { "type": "string", "description": "AI-generated insights and takeaways" },
+        "createdAt": { "type": "string", "format": "date-time", "description": "When the video was synthesized" }
+      },
+      "required": ["uid", "title", "prompt", "videoUri", "createdAt"]
+    }
+  },
+  "firestore": {
+    "/users/{userId}": {
+      "schema": "User",
+      "description": "User profile data"
+    },
+    "/tasks/{taskId}": {
+      "schema": "Task",
+      "description": "Individual study tasks"
+    },
+    "/studyPlans/{planId}": {
+      "schema": "StudyPlan",
+      "description": "Generated study schedules"
+    },
+    "/chatMessages/{messageId}": {
+      "schema": "ChatMessage",
+      "description": "AI tutor chat history"
+    },
+    "/educationalVideos/{videoId}": {
+      "schema": "EducationalVideo",
+      "description": "Synthesized educational video archive"
+    }
+  }
+}
