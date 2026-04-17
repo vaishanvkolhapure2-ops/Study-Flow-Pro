@@ -10,8 +10,10 @@ dotenv.config();
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
 
+// Create and export the Express app instance
+export const app = express();
+
 async function startServer() {
-  const app = express();
   const PORT = 3000;
 
   app.use(express.json());
@@ -92,12 +94,19 @@ async function startServer() {
     });
   }
 
-  app.listen(PORT, "0.0.0.0", () => {
-    console.log(`StudyFlow Backend running on http://localhost:${PORT}`);
-    console.log(`Mode: ${process.env.NODE_ENV || 'development'}`);
+  // Only start listening if run directly (not as a serverless function)
+  if (process.env.NODE_ENV !== "production" || process.env.VITE_DEV === "true") {
+    app.listen(PORT, "0.0.0.0", () => {
+      console.log(`StudyFlow Backend running on http://localhost:${PORT}`);
+    });
+  }
+}
+
+// Global initialization
+if (process.env.VERCEL !== '1') {
+  startServer().catch((err) => {
+    console.error("Failed to start StudyFlow Backend:", err);
   });
 }
 
-startServer().catch((err) => {
-  console.error("Failed to start StudyFlow Backend:", err);
-});
+export default app;

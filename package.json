@@ -1,11 +1,11 @@
 {
-  "name": "react-example",
+  "name": "studyflow-neural-pro",
   "private": true,
   "version": "0.0.0",
   "type": "module",
   "scripts": {
-    "dev": "tsx server.ts",
-    "start": "node server.ts",
+    "dev": "tsx api/index.ts",
+    "start": "node api/index.ts",
     "build": "vite build",
     "clean": "rm -rf dist",
     "lint": "tsc --noEmit"
