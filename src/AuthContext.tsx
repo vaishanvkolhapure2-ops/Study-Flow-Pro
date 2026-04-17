@@ -23,12 +23,13 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const [error, setError] = useState<string | null>(null);
 
   useEffect(() => {
-    return onAuthStateChanged(auth, async (user) => {
+    const unsub = onAuthStateChanged(auth, async (user) => {
       setLoading(true);
       setError(null);
       setUser(user);
-      if (user) {
-        try {
+      
+      try {
+        if (user) {
           const docRef = doc(db, 'users', user.uid);
           const docSnap = await getDoc(docRef);
           
@@ -50,15 +51,23 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
             await setDoc(docRef, newProfile);
             setProfile(newProfile as UserProfile);
           }
-        } catch (err) {
-          console.error("Profile load fail:", err);
-          handleFirestoreError(err, OperationType.GET, `users/${user.uid}`);
+        } else {
+          setProfile(null);
         }
-      } else {
-        setProfile(null);
+      } catch (err) {
+        console.error("Critical Profile Sync Failure:", err);
+        // We catch here but don't re-throw immediately to allow setLoading(false)
+        try {
+          handleFirestoreError(err, OperationType.GET, user ? `users/${user.uid}` : 'auth');
+        } catch (error: any) {
+          setError(error.message);
+        }
+      } finally {
+        setLoading(false);
       }
-      setLoading(false);
     });
+
+    return () => unsub();
   }, []);
 
   const login = async () => {
@@ -84,12 +93,20 @@ export const AuthProvider = ({ children }: { children: React.ReactNode }) => {
   const updateProfile = async (data: Partial<UserProfile>) => {
     if (!user) return;
     setError(null);
+    setLoading(true);
     try {
       const docRef = doc(db, 'users', user.uid);
       await setDoc(docRef, data, { merge: true });
       setProfile(prev => prev ? { ...prev, ...data } : null);
     } catch (err) {
-      handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+      console.error("Profile Update Failed:", err);
+      try {
+        handleFirestoreError(err, OperationType.UPDATE, `users/${user.uid}`);
+      } catch (error: any) {
+        setError(error.message);
+      }
+    } finally {
+      setLoading(false);
     }
   };
 
