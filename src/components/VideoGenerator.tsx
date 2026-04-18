@@ -88,7 +88,7 @@ export default function VideoGenerator() {
     setStatus('Initializing Neural Video Engine...');
 
     try {
-      const apiKey = process.env.API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY;
       const ai = new GoogleGenAI({ apiKey });
 
       const finalPrompt = prompt || `Create an educational 16:9 1080p video about these study topics: ${subjects}. Make it visually engaging and clear for a student.`;
@@ -176,7 +176,7 @@ export default function VideoGenerator() {
     if (!video.id) return;
     setSummarizingId(video.id);
     try {
-      const apiKey = process.env.API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY;
       const ai = new GoogleGenAI({ apiKey });
       
       const res = await ai.models.generateContent({
@@ -210,7 +210,7 @@ export default function VideoGenerator() {
     setStatus('Retrieving Archived Stream...');
     setError(null);
     try {
-      const apiKey = process.env.API_KEY;
+      const apiKey = process.env.GEMINI_API_KEY;
       const vidResponse = await fetch(video.videoUri, {
         method: 'GET',
         headers: {
