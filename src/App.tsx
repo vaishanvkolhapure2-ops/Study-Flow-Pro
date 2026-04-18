@@ -17,6 +17,7 @@ import {
   History
 } from 'lucide-react';
 import { motion, AnimatePresence } from 'motion/react';
+import { SpeedInsights } from '@vercel/speed-insights/react';
 import { useAuth } from './AuthContext';
 import { View } from './types';
 import Dashboard from './components/Dashboard';
@@ -84,7 +85,9 @@ export default function App() {
   ];
 
   return (
-    <div className="flex h-screen bg-bg-deep text-text-primary font-sans overflow-hidden">
+    <>
+      <SpeedInsights />
+      <div className="flex h-screen bg-bg-deep text-text-primary font-sans overflow-hidden">
       {/* Mobile Sidebar Toggle */}
       <button 
         onClick={() => setIsSidebarOpen(true)}
@@ -232,5 +235,6 @@ export default function App() {
         </nav>
       </main>
     </div>
+    </>
   );
 }
