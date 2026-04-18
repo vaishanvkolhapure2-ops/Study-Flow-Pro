@@ -1,4 +1,4 @@
-import { useState, useEffect } from 'react';
+import { useState, useEffect, lazy, Suspense } from 'react';
 import { 
   LayoutDashboard, 
   MessageSquare, 
@@ -19,17 +19,29 @@ import {
 import { motion, AnimatePresence } from 'motion/react';
 import { useAuth } from './AuthContext';
 import { View } from './types';
-import Dashboard from './components/Dashboard';
-import Tutor from './components/Tutor';
-import Planner from './components/Planner';
-import Timer from './components/Timer';
-import Tasks from './components/Tasks';
-import VideoGenerator from './components/VideoGenerator';
-import Lessons from './components/Lessons';
-import Revision from './components/Revision';
-import Landing from './components/Landing';
-import StandardSelection from './components/StandardSelection';
-import Settings from './components/Settings';
+
+// Lazy load components for faster initial load
+const Dashboard = lazy(() => import('./components/Dashboard'));
+const Tutor = lazy(() => import('./components/Tutor'));
+const Planner = lazy(() => import('./components/Planner'));
+const Timer = lazy(() => import('./components/Timer'));
+const Tasks = lazy(() => import('./components/Tasks'));
+const VideoGenerator = lazy(() => import('./components/VideoGenerator'));
+const Lessons = lazy(() => import('./components/Lessons'));
+const Revision = lazy(() => import('./components/Revision'));
+const Landing = lazy(() => import('./components/Landing'));
+const StandardSelection = lazy(() => import('./components/StandardSelection'));
+const Settings = lazy(() => import('./components/Settings'));
+
+const LoadingFallback = () => (
+  <div className="h-full w-full flex items-center justify-center min-h-[400px]">
+    <motion.div
+      animate={{ rotate: 360, scale: [1, 1.2, 1] }}
+      transition={{ duration: 1.5, repeat: Infinity, ease: 'easeInOut' }}
+      className="w-10 h-10 border-2 border-accent border-t-transparent rounded-full shadow-lg shadow-accent/20"
+    />
+  </div>
+);
 
 export default function App() {
   const { user, loading, profile, logout } = useAuth();
@@ -55,20 +67,28 @@ export default function App() {
     return (
       <div className="h-screen w-screen flex items-center justify-center bg-bg-deep">
         <motion.div
-          animate={{ rotate: 360 }}
+          animate={{ rotate: 360, scale: [1, 1.1, 1] }}
           transition={{ duration: 1, repeat: Infinity, ease: 'linear' }}
-          className="w-8 h-8 border-2 border-accent border-t-transparent rounded-full"
+          className="w-12 h-12 border-4 border-accent border-t-transparent rounded-full shadow-2xl shadow-accent/40"
         />
       </div>
     );
   }
 
   if (!user) {
-    return <Landing />;
+    return (
+      <Suspense fallback={null}>
+        <Landing />
+      </Suspense>
+    );
   }
 
   if (profile && !profile.standard) {
-    return <StandardSelection />;
+    return (
+      <Suspense fallback={null}>
+        <StandardSelection />
+      </Suspense>
+    );
   }
 
   const navItems = [
@@ -188,25 +208,27 @@ export default function App() {
               exit={{ opacity: 0, y: -10 }}
               transition={{ duration: 0.2 }}
             >
-              {currentView === 'dashboard' && <Dashboard setCurrentView={setCurrentView} />}
-              {currentView === 'lessons' && (
-                <Lessons 
-                  setCurrentView={setCurrentView} 
-                  setSelectedSubject={setSelectedSubject} 
-                />
-              )}
-              {currentView === 'revision' && (
-                <Revision 
-                  setCurrentView={setCurrentView} 
-                  initialSubject={selectedSubject} 
-                />
-              )}
-              {currentView === 'tutor' && <Tutor />}
-              {currentView === 'planner' && <Planner />}
-              {currentView === 'video' && <VideoGenerator />}
-              {currentView === 'timer' && <Timer />}
-              {currentView === 'tasks' && <Tasks />}
-              {currentView === 'settings' && <Settings />}
+              <Suspense fallback={<LoadingFallback />}>
+                {currentView === 'dashboard' && <Dashboard setCurrentView={setCurrentView} />}
+                {currentView === 'lessons' && (
+                  <Lessons 
+                    setCurrentView={setCurrentView} 
+                    setSelectedSubject={setSelectedSubject} 
+                  />
+                )}
+                {currentView === 'revision' && (
+                  <Revision 
+                    setCurrentView={setCurrentView} 
+                    initialSubject={selectedSubject} 
+                  />
+                )}
+                {currentView === 'tutor' && <Tutor />}
+                {currentView === 'planner' && <Planner />}
+                {currentView === 'video' && <VideoGenerator />}
+                {currentView === 'timer' && <Timer />}
+                {currentView === 'tasks' && <Tasks />}
+                {currentView === 'settings' && <Settings />}
+              </Suspense>
             </motion.div>
           </AnimatePresence>
         </div>
