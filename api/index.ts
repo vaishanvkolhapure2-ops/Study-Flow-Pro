@@ -3,8 +3,24 @@ import path from "path";
 import { fileURLToPath } from "url";
 import { GoogleGenAI, Type, Modality } from "@google/genai";
 import dotenv from "dotenv";
+import admin from "firebase-admin";
+import { getFirestore } from "firebase-admin/firestore";
 
 dotenv.config();
+
+// Initialize Firebase Admin
+let firebaseApp: admin.app.App;
+if (!admin.apps.length) {
+  firebaseApp = admin.initializeApp({
+    projectId: "gen-lang-client-0280245143",
+  });
+} else {
+  firebaseApp = admin.app();
+}
+
+// User-specific database ID from config
+const firestoreDbId = "ai-studio-2ee6bf69-b782-40b5-91a8-6fe4ecaf4971";
+const adminDb = getFirestore(firebaseApp, firestoreDbId);
 
 const __filename = fileURLToPath(import.meta.url);
 const __dirname = path.dirname(__filename);
@@ -25,7 +41,7 @@ app.get("/api/health", (req, res) => {
 // Secure AI Proxy Route
 app.post("/api/ai/generate", async (req, res) => {
   try {
-    const { model: modelName, prompt, config, schema } = req.body;
+    const { model: modelName, prompt, config, schema, persist, uid, collection: targetCollection } = req.body;
     
     if (!process.env.GEMINI_API_KEY) {
       return res.status(500).json({ error: "GEMINI_API_KEY is not configured on the server." });
@@ -43,7 +59,25 @@ app.post("/api/ai/generate", async (req, res) => {
       config: generationConfig
     });
 
-    res.json({ text: result.text });
+    const text = result.text;
+
+    // Optional: Persist to Firestore from the backend
+    if (persist && uid && targetCollection) {
+      try {
+        const data = schema ? JSON.parse(text) : { content: text };
+        await adminDb.collection(targetCollection).add({
+          ...data,
+          uid,
+          createdAt: admin.firestore.FieldValue.serverTimestamp(),
+          generatedBy: 'backend-ai'
+        });
+      } catch (persistError) {
+        console.error("Persistence Error:", persistError);
+        // We don't fail the AI request if persistence fails, but we log it
+      }
+    }
+
+    res.json({ text });
   } catch (error: any) {
     console.error("AI Proxy Error:", error);
     res.status(500).json({ error: error.message });
