@@ -1,7 +1,14 @@
 import { GoogleGenAI } from "@google/genai";
 
 // Client-side instance for streaming only (Tutor)
-const ai = new GoogleGenAI({ apiKey: process.env.GEMINI_API_KEY || '' });
+const getUserApiKey = () => {
+  if (typeof window !== 'undefined') {
+    return localStorage.getItem('SF_GEMINI_API_KEY') || process.env.GEMINI_API_KEY || '';
+  }
+  return process.env.GEMINI_API_KEY || '';
+};
+
+const ai = new GoogleGenAI({ apiKey: getUserApiKey() });
 
 // Safe serializer to prevent circular issues
 function safeStringify(obj: any) {

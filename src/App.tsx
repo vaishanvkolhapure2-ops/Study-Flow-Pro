@@ -29,6 +29,7 @@ import Lessons from './components/Lessons';
 import Revision from './components/Revision';
 import Landing from './components/Landing';
 import StandardSelection from './components/StandardSelection';
+import Settings from './components/Settings';
 
 export default function App() {
   const { user, loading, profile, logout } = useAuth();
@@ -79,6 +80,7 @@ export default function App() {
     { id: 'video', label: 'Study Videos', icon: VideoIcon },
     { id: 'timer', label: 'Focus Timer', icon: TimerIcon },
     { id: 'tasks', label: 'Tasks', icon: CheckSquare },
+    { id: 'settings', label: 'Neural Config', icon: CloudLightning },
   ];
 
   return (
@@ -177,7 +179,7 @@ export default function App() {
           )}
         </AnimatePresence>
         <div className="absolute top-0 left-0 w-full h-96 bg-gradient-to-b from-accent/5 to-transparent pointer-events-none" />
-        <div className="max-w-5xl mx-auto p-6 lg:p-12 relative z-10">
+        <div className="max-w-5xl mx-auto p-6 lg:p-12 pb-24 lg:pb-12 relative z-10">
           <AnimatePresence mode="wait">
             <motion.div
               key={currentView}
@@ -204,9 +206,30 @@ export default function App() {
               {currentView === 'video' && <VideoGenerator />}
               {currentView === 'timer' && <Timer />}
               {currentView === 'tasks' && <Tasks />}
+              {currentView === 'settings' && <Settings />}
             </motion.div>
           </AnimatePresence>
         </div>
+
+        {/* Mobile Bottom Navigation */}
+        <nav className="lg:hidden fixed bottom-0 left-0 right-0 h-16 bg-bg-surface border-t border-border-dim flex items-center justify-around px-6 pb-safe z-50">
+          {[
+            { id: 'dashboard', icon: LayoutDashboard, label: 'Home' },
+            { id: 'lessons', icon: BookOpen, label: 'Learn' },
+            { id: 'tutor', icon: MessageSquare, label: 'AI' },
+            { id: 'tasks', icon: CheckSquare, label: 'Tasks' },
+            { id: 'settings', icon: CloudLightning, label: 'Config' }
+          ].map((item) => (
+            <button
+              key={item.id}
+              onClick={() => setCurrentView(item.id as View)}
+              className={`flex flex-col items-center gap-1 ${currentView === item.id ? 'text-accent' : 'text-text-muted'}`}
+            >
+              <item.icon size={20} />
+              <span className="text-[10px] font-black uppercase tracking-tighter">{item.label}</span>
+            </button>
+          ))}
+        </nav>
       </main>
     </div>
   );

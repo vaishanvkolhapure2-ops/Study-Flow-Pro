@@ -51,7 +51,7 @@ export interface ChatMessage {
   createdAt: Timestamp;
 }
 
-export type View = 'dashboard' | 'tutor' | 'planner' | 'timer' | 'tasks' | 'video' | 'lessons' | 'revision';
+export type View = 'dashboard' | 'tutor' | 'planner' | 'timer' | 'tasks' | 'video' | 'lessons' | 'revision' | 'settings';
 
 export interface Flashcard {
   id: string;
